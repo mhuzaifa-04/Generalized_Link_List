@@ -1,16 +1,5 @@
-Generalized Linked List (GLL) Menu-Driven Program
-This is a simple, menu-driven C program for creating, managing, and displaying a Generalized Linked List (GLL). A GLL is a list that can contain either atomic data (integers, in this case) or other lists (sublists), allowing for complex, nested, recursive data structures.
-
-This program provides a command-line interface to dynamically build a GLL and display its nested structure.
-
-📜 Data Structure
-The core of the program is the struct Node. A flag variable is used to differentiate between two types of nodes:
-
-Data Node (flag == 0): Holds an integer value in the data field.
-
-Sublist Node (flag == 1): Holds no data itself, but its sublist pointer points to the head of another linked list.
-
-C
+#include <stdio.h>
+#include <stdlib.h>
 
 struct Node {
     int flag; // 0 for data, 1 for sublist
@@ -18,11 +7,212 @@ struct Node {
     struct Node* sublist; // Used if flag is 1
     struct Node* next; // Pointer to the next node in the current list
 };
-✨ Features
-Add Data: Append integer data nodes to the main list (or any sublist).
 
-Add Sublists: Append new sublist nodes, which you can then populate recursively.
+// Global pointers for the *main* list
+struct Node* start = NULL;
+struct Node* last = NULL; // To keep track of the last node for easy insertion
 
-Recursive Building: A sub-menu allows you to build nested lists to any depth.
+// Forward declaration for the recursive buildList function
+struct Node* buildList();
 
-Recursive Display: A single display function can traverse and print the entire complex structure in a human-readable format (e.g., [ 10, [ 20, 30 ], 40 ]).
+struct Node* createDataNode(int val) {
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+    if (newNode == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+    
+    newNode->flag = 0;
+    newNode->data = val;
+    newNode->sublist = NULL;
+    newNode->next = NULL;
+    return newNode;
+}
+
+struct Node* createSublistNode() {
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+    if (newNode == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+    
+    newNode->flag = 1;
+    newNode->data = 0; // Data field is not used for sublists
+    newNode->sublist = NULL; // Will be populated by buildList
+    newNode->next = NULL;
+    return newNode;
+}
+
+
+struct Node* buildList() {
+    struct Node* subStart = NULL;
+    struct Node* subLast = NULL;
+    int choice, val;
+
+    while (1) {
+        printf("  --- Sublist Menu ---\n");
+        printf("  1. Add data to this sublist\n");
+        printf("  2. Add a sub-sublist\n");
+        printf("  3. Finish this sublist\n");
+        printf("  Enter choice: ");
+        
+        // Clear input buffer in case of non-integer input
+        while (scanf("%d", &choice) != 1) {
+            printf("  Invalid input. Please enter 1, 2, or 3: ");
+            while (getchar() != '\n'); // Clear buffer
+        }
+
+        struct Node* newNode = NULL;
+
+        switch (choice) {
+            case 1: // Add data to sublist
+                printf("  Enter Value: ");
+                while (scanf("%d", &val) != 1) {
+                    printf("  Invalid input. Please enter an integer: ");
+                    while (getchar() != '\n'); // Clear buffer
+                }
+                
+                newNode = createDataNode(val);
+                if (subStart == NULL) {
+                    subStart = newNode;
+                    subLast = newNode;
+                } else {
+                    subLast->next = newNode;
+                    subLast = newNode;
+                }
+                break;
+                
+            case 2: // Add a sub-sublist
+                printf("  --- Creating Sub-Sublist ---\n");
+                newNode = createSublistNode();
+                newNode->sublist = buildList(); // Recursive call
+                
+                if (subStart == NULL) {
+                    subStart = newNode;
+                    subLast = newNode;
+                } else {
+                    subLast->next = newNode;
+                    subLast = newNode;
+                }
+                printf("  --- Finished Sub-Sublist ---\n");
+                break;
+                
+            case 3: // Finish current list
+                return subStart; // Return the head of the created sublist
+                
+            default:
+                printf("  Invalid sublist choice! Please try again.\n");
+        }
+    }
+}
+
+
+/**
+ * @brief Recursively displays the Generalized Linked List.
+ * @param ptr The starting node of the list to display.
+ */
+void displayGLL(struct Node *ptr) {
+    printf("[ "); // Start of a list
+    while (ptr != NULL) {
+        if (ptr->flag == 0) {
+            // It's a data node
+            printf("%d", ptr->data);
+        } else {
+            // It's a sublist node, recursively display it
+            displayGLL(ptr->sublist);
+        }
+        
+        // Add a comma if there is a next node
+        if (ptr->next != NULL) {
+            printf(", ");
+        }
+        
+        // Move to the next node in the *current* list
+        ptr = ptr->next;
+    }
+    printf(" ]"); // End of a list
+}
+
+/**
+ * @brief Main function with the primary menu.
+ */
+int main() {
+    int choice, val;
+
+    printf("-----MENU DRIVEN PROGRAM-----\n");
+    printf("1. Insert a Data (to main list)\n");
+    printf("2. Insert a Sublist (to main list)\n");
+    printf("3. Display List\n");
+    printf("4. Exit\n");
+
+    while (1) {
+        printf("\nEnter choice (1-4): ");
+        
+        // Basic input validation
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            while (getchar() != '\n'); // Clear the input buffer
+            continue;
+        }
+
+        struct Node* newNode = NULL;
+
+        switch (choice) {
+            case 1: // Insert Data
+                printf("Enter Value: ");
+                while (scanf("%d", &val) != 1) {
+                    printf("Invalid input. Please enter an integer: ");
+                    while (getchar() != '\n'); // Clear buffer
+                }
+
+                newNode = createDataNode(val);
+                
+                // Append to the main list
+                if (start == NULL) {
+                    start = newNode;
+                    last = newNode;
+                } else {
+                    last->next = newNode;
+                    last = newNode;
+                }
+                printf("Data node (%d) added to the main list.\n", val);
+                break;
+
+            case 2: // Insert Sublist
+                // Note: Your original code asked for a value here but ignored it.
+                // This version just creates the sublist.
+                printf("--- Creating New Sublist ---\n");
+                newNode = createSublistNode();
+                newNode->sublist = buildList(); // Call helper to build the sublist
+                
+                // Append the new sublist node to the main list
+                if (start == NULL) {
+                    start = newNode;
+                    last = newNode;
+                } else {
+                    last->next = newNode;
+                    last = newNode;
+                }
+                printf("--- Sublist added to the main list ---\n");
+                break;
+
+            case 3: // Display List
+                if (start == NULL) {
+                    printf("List is empty: [ ]\n");
+                } else {
+                    printf("Current List: ");
+                    displayGLL(start);
+                    printf("\n"); // Add a newline for clean formatting
+                }
+                break;
+
+            case 4: // Exit
+                printf("Exiting program.\n");
+                // Free memory here (optional but good practice for large programs)
+                return 0; // Exit successfully
+
+            default:
+                printf("Invalid choice! Please try again.\n");
+        }
+    }
+}
